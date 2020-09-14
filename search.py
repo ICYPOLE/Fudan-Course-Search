@@ -73,13 +73,11 @@ class CourseSearcher():
             for course_type, url in self.search_urls.items():
                 try:
                     response = self.session.get(url, timeout=5)
+                    response = response.content.decode()
+                    response = json.loads(response)
+                    self.is_course_available(response)
                 except:
                     continue
-
-                response = response.content.decode()
-                response = json.loads(response)
-
-                self.is_course_available(response)
 
     # 抢课（捡漏）
     def frequent_course_request(self):
@@ -107,21 +105,30 @@ class CourseSearcher():
                     return
 
     def _request_course(self, session, form_data):
-        response = session.post(
-            url='http://yjsxk.fudan.edu.cn/yjsxkapp/sys/xsxkappfudan/xsxkCourse/choiceCourse.do?_=1600059897179',
-            data=form_data
-        )
-        response = response.content.decode()
-        response = json.loads(response)
+        try:
+            response = session.post(
+                url='http://yjsxk.fudan.edu.cn/yjsxkapp/sys/xsxkappfudan/xsxkCourse/choiceCourse.do?_=1600059897179',
+                data=form_data,
+                timeout=5
+            )
+            response = response.content.decode()
+            response = json.loads(response)
 
-        print(response)
+            print(response)
+        except:
+            response = None
+
         return response
 
     def _refresh_csrfToken(self, session):
-        response = self.session_choose.get(
-            'http://yjsxk.fudan.edu.cn/yjsxkapp/sys/xsxkappfudan/xsxkHome/gotoChooseCourse.do')
-        response = response.content.decode()
-        new_token = re.findall(r"csrfToken\" value='(.*)'", response)[0]
+        try:
+            response = self.session_choose.get(
+                'http://yjsxk.fudan.edu.cn/yjsxkapp/sys/xsxkappfudan/xsxkHome/gotoChooseCourse.do',
+                timeout=5)
+            response = response.content.decode()
+            new_token = re.findall(r"csrfToken\" value='(.*)'", response)[0]
+        except:
+            new_token = None
 
         return new_token
 
