@@ -87,7 +87,7 @@ class CourseSearcher():
         self.session_choose.cookies = self.read_cookies()
 
         form_data = {
-            'bjdm': '2020202101COMP630036.02',
+            'bjdm': '2020202101COMP630036.01',
             'lx': '8',
             'csrfToken': None
         }
