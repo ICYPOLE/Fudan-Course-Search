@@ -7,4 +7,5 @@
 + **捡漏**： 不间断地请求选某一个指定课程，在有余量时可以立刻选到该课程。
 
 
-by ICYPOLE
+
+by [ICYPOLE](https://github.com/ICYPOLE)
