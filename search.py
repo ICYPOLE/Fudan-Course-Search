@@ -3,6 +3,7 @@ import requests
 from win10toast import ToastNotifier
 import time
 import threading
+import re
 
 
 class CourseSearcher():
@@ -63,6 +64,7 @@ class CourseSearcher():
                     if course['IS_CONFLICT'] == 0 and course['KCMC'] not in self.blacklist:
                         self.available_hints(course)
 
+    # 刷课
     def search(self):
         self.session = requests.session()
         self.session.cookies = self.read_cookies()
@@ -73,24 +75,59 @@ class CourseSearcher():
                     response = self.session.get(url, timeout=5)
                 except:
                     continue
-                
+
                 response = response.content.decode()
                 response = json.loads(response)
 
                 self.is_course_available(response)
-    
-    def test_choose_course(self):
+
+    # 抢课（捡漏）
+    def frequent_course_request(self):
         self.session_choose = requests.session()
         self.session_choose.cookies = self.read_cookies()
-        # response = self.session_choose.post('http://yjsxk.fudan.edu.cn/yjsxkapp/sys/xsxkappfudan/xsxkCourse/choiceCourse.do?_=1599980464025')
-        response = self.session_choose.post('http://yjsxk.fudan.edu.cn/yjsxkapp/sys/xsxkappfudan/xsxkCourse/loadXkjgRes.do?_=1599980464602')
+
+        form_data = {
+            'bjdm': '2020202101COMP630036.02',
+            'lx': '8',
+            'csrfToken': None
+        }
+
+        while True:
+            new_token = self._refresh_csrfToken(self.session_choose)
+            form_data['csrfToken'] = new_token
+
+            while True:
+                time.sleep(1.5)
+                response = self._request_course(self.session_choose, form_data)
+
+                if response['code'] == 0:
+                    if '过期' in response['msg']:
+                        break
+                else:
+                    return
+
+    def _request_course(self, session, form_data):
+        response = session.post(
+            url='http://yjsxk.fudan.edu.cn/yjsxkapp/sys/xsxkappfudan/xsxkCourse/choiceCourse.do?_=1600059897179',
+            data=form_data
+        )
         response = response.content.decode()
         response = json.loads(response)
 
         print(response)
+        return response
+
+    def _refresh_csrfToken(self, session):
+        response = self.session_choose.get(
+            'http://yjsxk.fudan.edu.cn/yjsxkapp/sys/xsxkappfudan/xsxkHome/gotoChooseCourse.do')
+        response = response.content.decode()
+        new_token = re.findall(r"csrfToken\" value='(.*)'", response)[0]
+
+        return new_token
 
 
 if __name__ == "__main__":
     s = CourseSearcher()
-    s.search()
+    # s.search()
     # s.test_choose_course()
+    s.frequent_course_request()
